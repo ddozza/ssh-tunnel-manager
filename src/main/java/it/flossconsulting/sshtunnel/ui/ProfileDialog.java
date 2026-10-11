@@ -14,25 +14,25 @@ final class ProfileDialog extends JDialog {
     private final JTextField name = new JTextField(24), host = new JTextField(24), sshPort = new JTextField("22", 8),
             user = new JTextField(System.getProperty("user.name", ""), 24), remoteHost = new JTextField("127.0.0.1", 24),
             remotePort = new JTextField(8), localPort = new JTextField(8), key = new JTextField(24);
-    private final JCheckBox automatic = new JCheckBox("Porta locale automatica", true), browser = new JCheckBox("Apri browser dopo la connessione", true);
+    private final JCheckBox automatic = new JCheckBox("Select local port automatically", true), browser = new JCheckBox("Open browser after connecting", true);
     private Profile result;
     ProfileDialog(JFrame owner, Profile original) {
-        super(owner, original == null ? "Aggiungi connessione" : "Modifica connessione", true);
+        super(owner, original == null ? "Add connection" : "Edit connection", true);
         JPanel form = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints(); c.insets = new Insets(4, 6, 4, 6); c.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
-        addRow(form, c, row++, "Nome", name);
+        addRow(form, c, row++, "Name", name);
         addRow(form, c, row++, "Server SSH", host);
-        addRow(form, c, row++, "Porta SSH", sshPort);
-        addRow(form, c, row++, "Utente SSH", user);
-        addRow(form, c, row++, "Host remoto", remoteHost);
-        addRow(form, c, row++, "Porta remota", remotePort);
-        addRow(form, c, row++, "Porta locale", localPort);
+        addRow(form, c, row++, "SSH port", sshPort);
+        addRow(form, c, row++, "SSH username", user);
+        addRow(form, c, row++, "Remote host", remoteHost);
+        addRow(form, c, row++, "Remote port", remotePort);
+        addRow(form, c, row++, "Local port", localPort);
         addRow(form, c, row++, "", automatic);
         JPanel keyRow = new JPanel(new BorderLayout(4, 0)); keyRow.add(key, BorderLayout.CENTER);
-        JButton choose = new JButton("Sfoglia…"); keyRow.add(choose, BorderLayout.EAST);
+        JButton choose = new JButton("Browse…"); keyRow.add(choose, BorderLayout.EAST);
         choose.addActionListener(e -> { JFileChooser chooser = new JFileChooser(); if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) key.setText(chooser.getSelectedFile().toString()); });
-        addRow(form, c, row++, "Chiave privata", keyRow);
+        addRow(form, c, row++, "Private key", keyRow);
         addRow(form, c, row++, "", browser);
         automatic.addActionListener(e -> localPort.setEnabled(!automatic.isSelected()));
         if (original != null) {
@@ -42,20 +42,20 @@ final class ProfileDialog extends JDialog {
             key.setText(original.identityPath()); browser.setSelected(original.openBrowser());
         }
         localPort.setEnabled(!automatic.isSelected());
-        JButton save = new JButton("Salva"), cancel = new JButton("Annulla"), test = new JButton("Test");
+        JButton save = new JButton("Save"), cancel = new JButton("Cancel"), test = new JButton("Test");
         test.setVisible(original == null);
         save.addActionListener(e -> {
             try {
                 Profile candidate = createProfile(original); candidate.validateKey(); result = candidate; dispose();
-            } catch (NumberFormatException ex) { JOptionPane.showMessageDialog(this, "Inserisci porte numeriche valide", "Errore", JOptionPane.ERROR_MESSAGE); }
-            catch (IllegalArgumentException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE); }
+            } catch (NumberFormatException ex) { JOptionPane.showMessageDialog(this, "Enter valid numeric ports", "Error", JOptionPane.ERROR_MESSAGE); }
+            catch (IllegalArgumentException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); }
         });
         test.addActionListener(e -> {
             final Profile candidate;
             try { candidate = createProfile(original); candidate.validateKey(); }
-            catch (RuntimeException ex) { JOptionPane.showMessageDialog(this, "Controlla i campi e il percorso della chiave: " + ex.getMessage(),
-                    "Dati non validi", JOptionPane.ERROR_MESSAGE); return; }
-            test.setEnabled(false); test.setText("Test in corso…");
+            catch (RuntimeException ex) { JOptionPane.showMessageDialog(this, "Check the fields and key path: " + ex.getMessage(),
+                    "Invalid input", JOptionPane.ERROR_MESSAGE); return; }
+            test.setEnabled(false); test.setText("Testing…");
             new SwingWorker<Integer, Void>() {
                 @Override protected Integer doInBackground() throws Exception {
                     DiagnosticLog log = DiagnosticLog.defaultLog();
@@ -74,11 +74,11 @@ final class ProfileDialog extends JDialog {
                     test.setText("Test"); test.setEnabled(true);
                     if (!isDisplayable()) return;
                     try { JOptionPane.showMessageDialog(ProfileDialog.this,
-                            "Connessione SSH e listener locale verificati su 127.0.0.1:" + get() + ".\nIl tunnel di test è stato chiuso.",
-                            "Test riuscito", JOptionPane.INFORMATION_MESSAGE); }
+                            "SSH connection and local listener verified at 127.0.0.1:" + get() + ".\nThe test tunnel has been closed.",
+                            "Test successful", JOptionPane.INFORMATION_MESSAGE); }
                     catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
                     catch (ExecutionException ex) { JOptionPane.showMessageDialog(ProfileDialog.this,
-                            TunnelManager.explain(ex.getCause()), "Test fallito", JOptionPane.ERROR_MESSAGE); }
+                            TunnelManager.explain(ex.getCause()), "Test failed", JOptionPane.ERROR_MESSAGE); }
                 }
             }.execute();
         });

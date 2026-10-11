@@ -27,7 +27,7 @@ public final class MinaTunnel implements AutoCloseable {
     private SshdSocketAddress bound;
 
     public synchronized int connect(Profile profile, Prompts prompts) throws Exception {
-        if (client != null) throw new IllegalStateException("Tunnel già avviato");
+        if (client != null) throw new IllegalStateException("Tunnel already started");
         ConnectionFailure.Stage stage = ConnectionFailure.Stage.IDENTITY;
         Path keyPath = Path.of(profile.identityPath());
         Path knownHosts = Path.of(System.getProperty("user.home"), ".ssh", "known_hosts");
@@ -45,16 +45,16 @@ public final class MinaTunnel implements AutoCloseable {
             }, knownHosts) {
                 @Override protected void handleKnownHostsFileUpdateFailure(ClientSession s, java.net.SocketAddress address,
                         java.security.PublicKey key, Path file, java.util.Collection<HostEntryPair> entries, Throwable cause) {
-                    throw new IllegalStateException("Impossibile salvare la host key in known_hosts");
+                    throw new IllegalStateException("Could not save the host key to known_hosts");
                 }
             });
             client.start();
             session = client.connect(profile.username(), profile.sshHost(), profile.sshPort()).verify(10_000).getSession();
             stage = ConnectionFailure.Stage.IDENTITY;
             FilePasswordProvider passwordProvider = (context, resource, retry) -> {
-                if (retry > 0) throw new IllegalArgumentException("Passphrase non corretta");
+                if (retry > 0) throw new IllegalArgumentException("Incorrect passphrase");
                 String password = prompts.passphrase();
-                if (password == null) throw new IllegalArgumentException("Passphrase annullata");
+                if (password == null) throw new IllegalArgumentException("Passphrase entry cancelled");
                 return password;
             };
             List<KeyPair> keys = new ArrayList<>();
@@ -63,7 +63,7 @@ public final class MinaTunnel implements AutoCloseable {
                 Iterable<KeyPair> loaded = SecurityUtils.loadKeyPairIdentities(session, resource, input, passwordProvider);
                 if (loaded != null) loaded.forEach(keys::add);
             }
-            if (keys.isEmpty()) throw new IllegalArgumentException("Formato della chiave non supportato");
+            if (keys.isEmpty()) throw new IllegalArgumentException("Unsupported key format");
             for (KeyPair key : keys) session.addPublicKeyIdentity(key);
             stage = ConnectionFailure.Stage.AUTHENTICATION;
             session.auth().verify(10_000);

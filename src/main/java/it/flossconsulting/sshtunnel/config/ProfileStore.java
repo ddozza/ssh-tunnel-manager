@@ -27,16 +27,16 @@ public final class ProfileStore {
         if (!Files.exists(file)) return new ArrayList<>();
         try {
             JsonObject root = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (root.get("schemaVersion").getAsInt() != 1) throw new IOException("Versione configurazione non supportata");
+            if (root.get("schemaVersion").getAsInt() != 1) throw new IOException("Unsupported configuration version");
             List<Profile> result = new ArrayList<>();
             Set<UUID> ids = new HashSet<>();
             for (var item : root.getAsJsonArray("profiles")) {
                 Profile p = gson.fromJson(item, Profile.class);
-                if (!ids.add(p.id())) throw new IOException("ID di profilo duplicato");
+                if (!ids.add(p.id())) throw new IOException("Duplicate profile ID");
                 result.add(p);
             }
             return result;
-        } catch (RuntimeException e) { throw new IOException("Configurazione non valida: " + e.getClass().getSimpleName(), e); }
+        } catch (RuntimeException e) { throw new IOException("Invalid configuration: " + e.getClass().getSimpleName(), e); }
     }
     public void save(Collection<Profile> profiles) throws IOException {
         Files.createDirectories(file.getParent());

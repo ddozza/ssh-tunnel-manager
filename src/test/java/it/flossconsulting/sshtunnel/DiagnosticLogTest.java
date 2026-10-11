@@ -35,7 +35,7 @@ class DiagnosticLogTest {
         var error = new ConnectionFailure(ConnectionFailure.Stage.IDENTITY,
                 new java.security.NoSuchAlgorithmException("Unsupported key type in /private/example"));
         String description = TunnelManager.explain(error);
-        assertTrue(description.contains("chiave"));
+        assertTrue(description.contains("key"));
         assertFalse(description.contains("/private/example"));
     }
 }

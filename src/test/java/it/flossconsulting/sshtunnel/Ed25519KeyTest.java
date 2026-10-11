@@ -13,7 +13,7 @@ class Ed25519KeyTest {
     @TempDir Path temp;
     @Test void loadsOpenSshEd25519Identity() throws Exception {
         KeyPair generated = SecurityUtils.getKeyPairGenerator("Ed25519").generateKeyPair();
-        Path file = temp.resolve("chiave con spazi 🔑");
+        Path file = temp.resolve("key with spaces 🔑");
         try (var output = Files.newOutputStream(file)) {
             OpenSSHKeyPairResourceWriter.INSTANCE.writePrivateKey(generated, "test", null, output);
         }

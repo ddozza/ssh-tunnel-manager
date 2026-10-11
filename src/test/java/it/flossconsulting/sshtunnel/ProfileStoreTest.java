@@ -12,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProfileStoreTest {
     @TempDir Path temp;
     @Test void savesSeveralProfilesWithStableIdsAndUnicodePaths() throws Exception {
-        Profile a = profile("Prima", "chiave con spazi 🔑");
-        Profile b = profile("Prima", "altra chiave");
+        Profile a = profile("First", "key with spaces 🔑");
+        Profile b = profile("First", "another key");
         ProfileStore store = new ProfileStore(temp.resolve("config").resolve("profiles.json"));
         store.save(List.of(a, b));
         assertEquals(List.of(a, b), store.load());

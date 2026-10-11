@@ -11,8 +11,8 @@ final class SwingPrompts implements MinaTunnel.Prompts {
     @Override public boolean trust(String host, String type, String fingerprint) {
         final boolean[] accepted = {false};
         try { SwingUtilities.invokeAndWait(() -> accepted[0] = JOptionPane.showConfirmDialog(owner,
-                "Host SSH sconosciuto: " + host + "\nTipo: " + type + "\nFingerprint: " + fingerprint +
-                "\n\nFidarsi di questa host key e aggiungerla a known_hosts?", "Verifica host key",
+                "Unknown SSH host: " + host + "\nKey type: " + type + "\nFingerprint: " + fingerprint +
+                "\n\nTrust this host key and add it to known_hosts?", "Verify host key",
                 JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION); }
         catch (Exception ignored) { return false; }
         return accepted[0];
@@ -21,7 +21,7 @@ final class SwingPrompts implements MinaTunnel.Prompts {
         final String[] value = {null};
         try { SwingUtilities.invokeAndWait(() -> {
             JPasswordField input = new JPasswordField(24);
-            if (JOptionPane.showConfirmDialog(owner, input, "Passphrase della chiave", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+            if (JOptionPane.showConfirmDialog(owner, input, "Key passphrase", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
                 char[] chars = input.getPassword(); value[0] = new String(chars); Arrays.fill(chars, '\0');
             }
         }); } catch (Exception ignored) { }

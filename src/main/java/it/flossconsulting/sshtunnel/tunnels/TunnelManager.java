@@ -43,7 +43,7 @@ public final class TunnelManager implements AutoCloseable {
         e.cancel = false;
         CompletableFuture<Void> previousClose = closing.get(profile.id());
         log.record(profile.id(), "SERVER", "CONNECTING", null);
-        publish(profile.id(), e, new Status(ConnectionState.CONNECTING, null, "Connessione in corso"));
+        publish(profile.id(), e, new Status(ConnectionState.CONNECTING, null, "Connecting"));
         workers.execute(() -> {
             try {
                 if (previousClose != null) previousClose.join();
@@ -86,7 +86,7 @@ public final class TunnelManager implements AutoCloseable {
                 synchronized (this) {
                     if (e.status.state() == ConnectionState.CONNECTED) {
                         log.record(id, "SESSION", "DROPPED", null);
-                        publish(id, e, new Status(ConnectionState.ERROR, null, "Connessione SSH interrotta"));
+                        publish(id, e, new Status(ConnectionState.ERROR, null, "SSH connection dropped"));
                     }
                 }
             }
@@ -98,19 +98,19 @@ public final class TunnelManager implements AutoCloseable {
         String message = String.valueOf(cause.getMessage()).toLowerCase(Locale.ROOT);
         return switch (stage) {
             case IDENTITY -> {
-                if (message.contains("passphrase")) yield "Passphrase della chiave non corretta o annullata";
+                if (message.contains("passphrase")) yield "Incorrect or cancelled key passphrase";
                 if (cause instanceof java.security.NoSuchAlgorithmException || message.contains("unsupported"))
-                    yield "Formato o algoritmo della chiave non supportato";
-                yield "Impossibile leggere la chiave privata selezionata";
+                    yield "Unsupported key format or algorithm";
+                yield "Could not read the selected private key";
             }
-            case AUTHENTICATION -> "Autenticazione fallita: controlla utente e chiave";
+            case AUTHENTICATION -> "Authentication failed: check the username and key";
             case FORWARD -> message.contains("bind") || message.contains("already in use")
-                    ? "Porta locale occupata" : "Impossibile aprire il listener locale";
+                    ? "Local port is already in use" : "Could not open the local listener";
             case SERVER -> {
-                if (message.contains("host key") || message.contains("verify")) yield "Host key rifiutata o modificata";
+                if (message.contains("host key") || message.contains("verify")) yield "Host key rejected or changed";
                 if (message.contains("timed out") || message.contains("refused") || message.contains("unreachable"))
-                    yield "Server SSH non raggiungibile";
-                yield "Connessione SSH fallita: controlla server, porta e host key";
+                    yield "SSH server is unreachable";
+                yield "SSH connection failed: check the server, port, and host key";
             }
         };
     }

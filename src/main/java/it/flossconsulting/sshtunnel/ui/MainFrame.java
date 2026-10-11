@@ -23,7 +23,7 @@ public final class MainFrame extends JFrame {
     private final Table tableModel = new Table();
     private final JTable table = new JTable(tableModel);
     private final JTextArea logArea = new JTextArea();
-    private final JLabel logTitle = new JLabel("Log connessione");
+    private final JLabel logTitle = new JLabel("Connection log");
     private final List<JMenuItem> actions;
     private final TunnelManager tunnels = new TunnelManager((id, status) -> SwingUtilities.invokeLater(() -> {
         refreshTable();
@@ -37,7 +37,7 @@ public final class MainFrame extends JFrame {
         addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) { tunnels.close(); dispose(); } });
         try { profiles.addAll(store.load()); }
         catch (Exception e) { storageReady = false; JOptionPane.showMessageDialog(this,
-                "Impossibile leggere i profili: " + e.getMessage() + "\nIl file non verrà sovrascritto.", "Errore", JOptionPane.ERROR_MESSAGE); }
+                "Could not read profiles: " + e.getMessage() + "\nThe file will not be overwritten.", "Error", JOptionPane.ERROR_MESSAGE); }
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);
         table.setFillsViewportHeight(true);
@@ -48,12 +48,12 @@ public final class MainFrame extends JFrame {
 
         JPopupMenu rowMenu = new JPopupMenu();
         JPopupMenu emptyMenu = new JPopupMenu();
-        JMenuItem newItem = menuItem("Nuovo", this::addProfile);
+        JMenuItem newItem = menuItem("New", this::addProfile);
         newItem.setEnabled(storageReady);
         emptyMenu.add(newItem);
-        actions = List.of(menuItem("Modifica", this::edit), menuItem("Duplica", this::duplicate),
-                menuItem("Elimina", this::delete), menuItem("Connetti", this::connect),
-                menuItem("Disconnetti", this::disconnect), menuItem("Apri nel browser", () -> {
+        actions = List.of(menuItem("Edit", this::edit), menuItem("Duplicate", this::duplicate),
+                menuItem("Delete", this::delete), menuItem("Connect", this::connect),
+                menuItem("Disconnect", this::disconnect), menuItem("Open in browser", () -> {
                     Profile p = selected(); if (p != null) openBrowser(p.id());
                 }));
         for (int i = 0; i < actions.size(); i++) {
@@ -96,7 +96,7 @@ public final class MainFrame extends JFrame {
 
         logArea.setEditable(false);
         logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        logArea.setText("Seleziona un tunnel per vedere il log della connessione.");
+        logArea.setText("Select a tunnel to view its connection log.");
         logTitle.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.add(logTitle, BorderLayout.NORTH);
@@ -105,7 +105,7 @@ public final class MainFrame extends JFrame {
         split.setResizeWeight(0.55);
         split.setDividerLocation(290);
         add(split, BorderLayout.CENTER);
-        add(new JLabel("Clic destro su uno spazio vuoto per Nuovo, su un tunnel per le sue azioni."), BorderLayout.SOUTH);
+        add(new JLabel("Right-click an empty area for New, or a tunnel for its actions."), BorderLayout.SOUTH);
         setSize(1050, 590); setLocationRelativeTo(null); updateActions();
     }
     private JMenuItem menuItem(String name, Runnable action) {
@@ -136,18 +136,18 @@ public final class MainFrame extends JFrame {
     private void refreshLog() {
         Profile p = selected();
         if (p == null) {
-            logTitle.setText("Log connessione");
-            logArea.setText("Seleziona un tunnel per vedere il log della connessione.");
+            logTitle.setText("Connection log");
+            logArea.setText("Select a tunnel to view its connection log.");
             return;
         }
         TunnelManager.Status current = tunnels.status(p.id());
-        logTitle.setText("Log connessione — " + p.name());
+        logTitle.setText("Connection log — " + p.name());
         StringBuilder content = new StringBuilder();
         for (DiagnosticLog.Event event : diagnosticLog.events(p.id())) {
             content.append(event.time()).append("  ").append(describe(event)).append('\n');
         }
-        if (content.isEmpty()) content.append("Nessun evento registrato.\n");
-        content.append("\nStato attuale: ").append(stateText(current.state()));
+        if (content.isEmpty()) content.append("No events recorded.\n");
+        content.append("\nCurrent state: ").append(stateText(current.state()));
         if (current.localPort() != null) content.append(" — 127.0.0.1:").append(current.localPort());
         if (current.state() == ConnectionState.ERROR && !current.message().isBlank())
             content.append(" — ").append(current.message());
@@ -156,28 +156,28 @@ public final class MainFrame extends JFrame {
     }
     private static String describe(DiagnosticLog.Event event) {
         String stage = switch (event.stage()) {
-            case "SERVER" -> "collegamento SSH / host key";
-            case "IDENTITY" -> "caricamento chiave";
-            case "AUTHENTICATION" -> "autenticazione";
-            case "FORWARD" -> "apertura porta locale";
-            case "SESSION" -> "sessione SSH";
+            case "SERVER" -> "SSH connection / host key";
+            case "IDENTITY" -> "key loading";
+            case "AUTHENTICATION" -> "authentication";
+            case "FORWARD" -> "local port forwarding";
+            case "SESSION" -> "SSH session";
             default -> event.stage();
         };
         return switch (event.outcome()) {
-            case "CONNECTING" -> "Connessione in corso";
-            case "CONNECTED" -> "Connesso; listener locale attivo";
-            case "DISCONNECTED" -> "Disconnesso";
-            case "DROPPED" -> "Connessione interrotta";
-            case "ERROR" -> "Errore durante " + stage + (event.type().isEmpty() ? "" : " (" + event.type() + ")");
+            case "CONNECTING" -> "Connecting";
+            case "CONNECTED" -> "Connected; local listener active";
+            case "DISCONNECTED" -> "Disconnected";
+            case "DROPPED" -> "Connection dropped";
+            case "ERROR" -> "Error during " + stage + (event.type().isEmpty() ? "" : " (" + event.type() + ")");
             default -> event.outcome() + " — " + stage;
         };
     }
     private static String stateText(ConnectionState state) {
         return switch (state) {
-            case DISCONNECTED -> "Disconnesso";
-            case CONNECTING -> "Connessione in corso";
-            case CONNECTED -> "Connesso";
-            case ERROR -> "Errore";
+            case DISCONNECTED -> "Disconnected";
+            case CONNECTING -> "Connecting";
+            case CONNECTED -> "Connected";
+            case ERROR -> "Error";
         };
     }
     private void updateActions() {
@@ -194,12 +194,12 @@ public final class MainFrame extends JFrame {
     }
     private void persist() {
         try { store.save(profiles); refreshTable(); }
-        catch (Exception e) { JOptionPane.showMessageDialog(this, "Salvataggio fallito: " + e.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE); }
+        catch (Exception e) { JOptionPane.showMessageDialog(this, "Could not save profiles: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); }
     }
     private boolean confirmName(Profile p) {
         boolean duplicate = profiles.stream().anyMatch(other -> !other.id().equals(p.id()) && other.name().equalsIgnoreCase(p.name()));
-        return !duplicate || JOptionPane.showConfirmDialog(this, "Esiste già un profilo con questo nome. Continuare?",
-                "Nome duplicato", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
+        return !duplicate || JOptionPane.showConfirmDialog(this, "A profile with this name already exists. Continue?",
+                "Duplicate name", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
     }
     private void addProfile() { Profile p = new ProfileDialog(this, null).result(); if (p != null && confirmName(p)) { profiles.add(p); persist(); selectProfile(p.id()); } }
     private void edit() {
@@ -209,10 +209,10 @@ public final class MainFrame extends JFrame {
     private void duplicate() { Profile p = selected(); if (p != null) { Profile copy = p.duplicate(); profiles.add(copy); persist(); selectProfile(copy.id()); } }
     private void delete() {
         Profile p = selected(); if (p == null) return;
-        String message = "Eliminare il profilo '" + p.name() + "'?";
+        String message = "Delete profile '" + p.name() + "'?";
         if (tunnels.status(p.id()).state() == ConnectionState.CONNECTED || tunnels.status(p.id()).state() == ConnectionState.CONNECTING)
-            message += "\nIl relativo tunnel verrà prima disconnesso.";
-        if (JOptionPane.showConfirmDialog(this, message, "Conferma eliminazione", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
+            message += "\nIts tunnel will be disconnected first.";
+        if (JOptionPane.showConfirmDialog(this, message, "Confirm deletion", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
         deleting.add(p.id()); updateActions();
         tunnels.disconnectAsync(p.id()).thenRun(() -> SwingUtilities.invokeLater(() -> {
             profiles.remove(p); deleting.remove(p.id()); persist();
@@ -229,12 +229,12 @@ public final class MainFrame extends JFrame {
         Thread task = new Thread(() -> {
             try { browser.open(port); }
             catch (Exception e) { SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                    "Browser non disponibile: " + e.getClass().getSimpleName())); }
+                    "Browser unavailable: " + e.getClass().getSimpleName())); }
         }, "open-browser");
         task.setDaemon(true); task.start();
     }
     private final class Table extends AbstractTableModel {
-        private final String[] columns = {"Nome", "Server SSH", "Destinazione remota", "Endpoint locale", "Stato"};
+        private final String[] columns = {"Name", "SSH server", "Remote destination", "Local endpoint", "State"};
         @Override public int getRowCount() { return profiles.size(); }
         @Override public int getColumnCount() { return columns.length; }
         @Override public String getColumnName(int col) { return columns[col]; }
